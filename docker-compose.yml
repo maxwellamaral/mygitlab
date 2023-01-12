@@ -1,0 +1,58 @@
+version: '3.7'
+services:
+  # Ver exemplo em https://gist.github.com/edy/6cc47b4f65dba7ce45f8b9f0d74ce18f
+  web:
+    ## COLOCAR DOMINIO
+    hostname: dominio.com.br
+    image: "gitlab/gitlab-ee:latest"
+    restart: always
+    container_name: gitlab
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        ## COLOCAR URL EXTERNO
+        external_url 'https://lab.dominio.com.br'
+
+        # letsencrypt['enable'] = false
+        # letsencrypt['contact_emails'] = ['email@dominio.com.br'] 
+
+        nginx['listen_port'] = 80
+        nginx['listen_https'] = false
+        nginx['proxy_set_headers'] = {"X-Forwarded-Proto" => "https","X-Forwarded-Ssl" => "on"}
+        # nginx['real_ip_trusted_addresses'] = [ '172.17.0.0/24', '172.17.0.1', '2001:0db8::/32' ]
+        # nginx['real_ip_header'] = 'X-Real-IP'
+        # nginx['real_ip_recursive'] = 'on'
+
+        gitlab_rails['gitlab_shell_ssh_port'] = 4022
+        gitlab_rails['time_zone'] = 'America/Recife'
+        # gitlab_rails['omniauth_enabled'] = true
+        # gitlab_rails['omniauth_providers'] = [{"name" => "bitbucket","app_id" => "VbYgi6ufoluzgthMHy","app_secret" => "hBkFGi8zGZgfizukzt
+        
+        ## CONFIGURAR ENVIO DE EMAIL VIA SMTP AQUI. ESTOU USANDO O DO GMAIL. É NECESSÁRIO CRIAR SENHA DE ACESSO PARA APPS EXTERNOS. NÃO USAR SENHA PESSOAL.
+        gitlab_rails['gitlab_email_from'] = 'email@dominio.com.br'
+        # gitlab_rails['gitlab_email_reply_to'] = 'noreply@example.com'
+        gitlab_rails['smtp_enable'] = true
+        gitlab_rails['smtp_address'] = "smtp.gmail.com"
+        gitlab_rails['smtp_port'] = 587
+        gitlab_rails['smtp_user_name'] = "email@dominio.com.br"
+        gitlab_rails['smtp_password'] = "SENHA-AQUI"
+        gitlab_rails['smtp_authentication'] = "email@dominio.com.br"
+        gitlab_rails['smtp_enable_starttls_auto'] = true
+        #gitlab_rails['smtp_openssl_verify_mode'] = 'peer'
+        #gitlab_rails['gitlab_default_projects_features_container_registry'] = false 
+
+        ## SE FOR USAR REGISTRY DOCKER'
+        #registry['enable'] = true
+        #registry_external_url 'https://registry.dominio.com.br'
+        #registry_nginx['listen_port'] = 5001
+        #registry_nginx['listen_https'] = false
+        #registry_nginx['proxy_set_headers'] = {"X-Forwarded-Proto" => "https","X-Forwarded-Ssl" => "on", "Host" => "registry.example.com"}      
+    ports:
+      - "80:80"
+      - "22:22"
+      # - '127.0.0.1:5001:5001'
+    restart: always
+    shm_size: 256m
+    volumes:
+      - "./volumes/config:/etc/gitlab"
+      - "./volumes/logs:/var/log/gitlab"
+      - "./volumes/data:/var/opt/gitlab"
